@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebXR Shooter Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/latest/Build/Cesium/Cesium.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@webxr-input-profiles/motion-controllers@latest"></script>
+    <script src="https://immersive-web.github.io/webxr-samples/js/webxr-polyfill.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+</head>
+<body>
+    <div id="cesiumContainer" style="width: 100vw; height: 100vh;"></div>
+    <script>
+        let viewer = new Cesium.Viewer('cesiumContainer', {
+            terrainProvider: Cesium.createWorldTerrain(),
+            sceneModePicker: false,
+            baseLayerPicker: false
+        });
+
+        let scene = viewer.scene;
+        let camera = viewer.camera;
+
+        // Load real-world 3D buildings with interiors
+        let buildings = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+            url: Cesium.IonResource.fromAssetId(96188) // Example Asset ID
+        }));
+
+        // WebXR Initialization
+        if (navigator.xr) {
+            navigator.xr.requestSession('immersive-vr').then(session => {
+                session.addEventListener('end', () => console.log("Exited VR"));
+            }).catch(err => console.log("WebXR not available", err));
+        }
+
+        // Door System
+        class Door {
+            constructor(position, isLocked) {
+                this.entity = viewer.entities.add({
+                    position: Cesium.Cartesian3.fromDegrees(position[0], position[1], position[2]),
+                    box: {
+                        dimensions: new Cesium.Cartesian3(1.0, 2.5, 0.2),
+                        material: Cesium.Color.BROWN
+                    }
+                });
+                this.isLocked = isLocked;
+            }
+        }
+
+        // Door Knocker and Buttstock Mechanism
+        function useDoorKnocker(door) {
+            if (door.isLocked) {
+                console.log("Knocking on door...");
+                setTimeout(() => {
+                    door.isLocked = false;
+                    console.log("Door unlocked!");
+                }, 3000);
+            }
+        }
+
+        function hitDoorWithButtstock(door) {
+            if (door.isLocked) {
+                console.log("Hitting door with buttstock...");
+                setTimeout(() => {
+                    door.isLocked = false;
+                    console.log("Door forced open!");
+                }, 2000);
+            }
+        }
+
+        // Example Door Placement
+        let door1 = new Door([-74.004, 40.7135, 10], true);
+        let door2 = new Door([-74.003, 40.713, 10], true);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'e') {
+                useDoorKnocker(door1);
+                useDoorKnocker(door2);
+            } else if (e.key === 'q') {
+                hitDoorWithButtstock(door1);
+                hitDoorWithButtstock(door2);
+            }
+        });
+    </script>
+</body>
+</html>
